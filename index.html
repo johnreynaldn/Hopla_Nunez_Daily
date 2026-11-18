@@ -3,220 +3,253 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hopla_Nunez — Operations Pulse Dashboard</title>
+  <title>Hopla_Nunez — Hourly Pulse Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="sidebar.css" />
   <link rel="stylesheet" href="styles.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
   <script src="app.js" defer></script>
 </head>
 <body>
 
-  <button class="exit-presentation" onclick="togglePresentationMode()">
-    ✕ Exit Presentation Mode
-  </button>
-
-  <!-- Interactive Control Panel -->
-  <div class="control-panel">
-    <div class="panel-header">
-      <h2>
-        <span>⚡ Operations Pulse Generator — Hopla_Nunez</span>
-        <span class="panel-badge" id="saveStatusBadge">✓ Settings Auto-Saved</span>
-      </h2>
-      <span class="panel-tip">Click any agent's status badge in the table to cycle On Call / Break / Lunch / Off / Out</span>
+  <!-- Left Navigation Sidebar -->
+  <aside class="app-sidebar" id="appSidebar">
+    <div class="sidebar-top">
+      <div class="sidebar-brand">
+        <div class="brand-badge-icon">HN</div>
+        <span class="brand-title">Hopla_Nunez</span>
+      </div>
+      <button class="sidebar-toggle-btn" onclick="document.getElementById('appSidebar').classList.toggle('collapsed')" title="Toggle Sidebar">☰</button>
     </div>
 
-    <div class="panel-body">
-      <div class="field-group">
-        <label>
-          <span>Paste Raw Dialer Data (Tab or Space Separated)</span>
-          <span class="hint-accent">Auto-strips ID prefixes (e.g. 351-)</span>
-        </label>
-        <textarea id="rawInput" spellcheck="false" placeholder="Paste your dialer/CRM rows here..."></textarea>
+    <nav class="sidebar-menu">
+      <a href="index.html" class="sidebar-item active">
+        <div class="sidebar-item-left">
+          <span class="nav-circle circle-emerald">📊</span>
+          <span class="nav-text">Hourly Pulse</span>
+        </div>
+      </a>
+
+      <a href="coachinglogs.html" class="sidebar-item">
+        <div class="sidebar-item-left">
+          <span class="nav-circle circle-amber">📝</span>
+          <span class="nav-text">Coaching Logs</span>
+        </div>
+        <span class="nav-plus">+</span>
+      </a>
+
+      <a href="#" class="sidebar-item" onclick="downloadReportPNG(); return false;">
+        <div class="sidebar-item-left">
+          <span class="nav-circle circle-cyan">📸</span>
+          <span class="nav-text">Export PNG</span>
+        </div>
+        <span class="nav-plus">+</span>
+      </a>
+    </nav>
+  </aside>
+
+  <!-- Main Content Workspace -->
+  <main class="main-workspace">
+    <button class="exit-presentation" onclick="togglePresentationMode()">
+      ✕ Exit Presentation Mode
+    </button>
+
+    <!-- Interactive Control Panel -->
+    <div class="control-panel">
+      <div class="panel-header">
+        <h2>
+          <span>⚡ Operations Pulse Generator — Hopla_Nunez</span>
+          <span class="panel-badge" id="saveStatusBadge">✓ Settings Auto-Saved</span>
+        </h2>
+        <span class="panel-tip">Click any agent's status badge in the table to cycle On Call / Break / Lunch / Off / Out</span>
       </div>
 
-      <div class="field-group">
-        <label>Report Settings & Thresholds (Auto-Saved)</label>
-        <div class="settings-grid">
-          <div>
-            <label class="sub-label">Team Name / Header Tag</label>
-            <input type="text" id="teamTagInput" value="HOPLA_NUNEZ • OPERATIONS" />
-          </div>
-          <div>
-            <label class="sub-label">Supervisor / Lead Name</label>
-            <input type="text" id="supervisorInput" value="Hopla_Nunez" />
-          </div>
-          <div>
-            <label class="sub-label">Scheduled Headcount</label>
-            <input type="number" id="scheduledInput" placeholder="Auto (Total Rows)" min="1" />
-          </div>
-          <div>
-            <label class="sub-label">Elapsed Shift Hours (Avg/Hr)</label>
-            <input type="number" id="elapsedHoursInput" value="1" step="0.5" min="0.1" />
-          </div>
-          <div>
-            <label class="sub-label">Talk Time Alert (&gt; MM:SS)</label>
-            <input type="text" id="talkThresholdInput" value="00:05:30" />
-          </div>
-          <div>
-            <label class="sub-label">Pause Alert (&gt; HH:MM:SS)</label>
-            <input type="text" id="pauseThresholdInput" value="01:00:00" />
-          </div>
-          <div class="full-span">
-            <label class="sub-label">Custom Logo URL (Optional)</label>
-            <input type="text" id="logoUrlInput" placeholder="Paste logo image URL or leave blank for default HN monogram" />
-          </div>
+      <div class="panel-body">
+        <div class="field-group">
+          <label>
+            <span>Paste Raw Dialer Data (Tab or Space Separated)</span>
+            <span class="hint-accent">Auto-strips ID prefixes (e.g. 351-)</span>
+          </label>
+          <textarea id="rawInput" spellcheck="false" placeholder="Paste your dialer/CRM rows here..."></textarea>
         </div>
-      </div>
 
-      <!-- Shift History Bar -->
-      <div class="history-bar">
-        <div class="history-controls">
-          <span class="history-label">📚 Shift History:</span>
-          <select id="historySelect">
-            <option value="">-- No saved snapshots yet --</option>
-          </select>
-          <button class="btn-secondary btn-sm" onclick="loadFromHistory()">Load Snapshot</button>
-          <button class="btn-danger-soft" onclick="deleteHistoryItem()" title="Delete selected snapshot">🗑️</button>
-        </div>
-        <button class="btn-secondary btn-sm" onclick="saveToHistory()">💾 Save Current Snapshot</button>
-      </div>
-
-      <!-- Primary Actions -->
-      <div class="panel-actions">
-        <div class="btn-group">
-          <button class="btn-primary" onclick="generateReport(true)">⚡ Generate Report</button>
-          <button class="btn-amber" onclick="quickResetRoster()">🔄 Quick Reset (Keep Roster)</button>
-          <button class="btn-secondary" onclick="clearRawData()">🧹 Clear Text Box</button>
-          <button class="btn-secondary" onclick="loadSampleData()">↻ Sample Data</button>
-        </div>
-        <div class="btn-group">
-          <button class="btn-secondary" onclick="togglePresentationMode()">🖥️ Presentation Mode</button>
-          <button class="btn-dark" onclick="downloadReportPNG()">📸 Download PNG</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Visual Report Output -->
-  <div class="report-wrapper" id="reportCapture">
-    <div class="top-accent-bar"></div>
-
-    <!-- Split-Card Header -->
-    <div class="report-header">
-      <div class="header-left">
-        <div class="brand-logo" id="brandLogoBox">
-          <span class="brand-logo-mark">HN</span>
-          <span>HOPLA</span>
-        </div>
-        <div class="header-titles">
-          <div class="eyebrow-row">
-            <span class="team-tag" id="dispTeamTag">HOPLA_NUNEZ • OPERATIONS</span>
-            <span class="live-dot">HOURLY PULSE</span>
-          </div>
-          <h1>Team Performance & Queue Summary</h1>
-          <div class="header-meta">
-            <span id="dispTime">🕒 07:33 AM</span>
-            <span>•</span>
-            <span id="dispDate">📅 Wednesday, November 18, 2026</span>
-            <span>•</span>
-            <span id="dispSupervisor">Lead: Hopla_Nunez</span>
+        <div class="field-group">
+          <label>Report Settings & Thresholds (Auto-Saved)</label>
+          <div class="settings-grid">
+            <div>
+              <label class="sub-label">Team Name / Header Tag</label>
+              <input type="text" id="teamTagInput" value="HOPLA_NUNEZ • OPERATIONS" />
+            </div>
+            <div>
+              <label class="sub-label">Supervisor / Lead Name</label>
+              <input type="text" id="supervisorInput" value="John Reynald D. Nuñez" />
+            </div>
+            <div>
+              <label class="sub-label">Scheduled Headcount</label>
+              <input type="number" id="scheduledInput" placeholder="Auto (Total Rows)" min="1" />
+            </div>
+            <div>
+              <label class="sub-label">Elapsed Shift Hours (Avg/Hr)</label>
+              <input type="number" id="elapsedHoursInput" value="1" step="0.5" min="0.1" />
+            </div>
+            <div>
+              <label class="sub-label">Talk Time Alert (&gt; MM:SS)</label>
+              <input type="text" id="talkThresholdInput" value="00:05:30" />
+            </div>
+            <div>
+              <label class="sub-label">Pause Alert (&gt; HH:MM:SS)</label>
+              <input type="text" id="pauseThresholdInput" value="01:00:00" />
+            </div>
+            <div class="full-span">
+              <label class="sub-label">Custom Logo URL (Optional)</label>
+              <input type="text" id="logoUrlInput" placeholder="Paste logo image URL or leave blank for default HN monogram" />
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="header-right-cluster">
-        <div class="stat-pill-box">
-          <div class="stat-pill-label">ANSWER RATE</div>
-          <div class="stat-pill-value emerald-val" id="dispAnswerRate">99.6%</div>
-          <div class="stat-pill-sub muted-sub" id="dispMissedSummary">1 missed total</div>
+        <div class="history-bar">
+          <div class="history-controls">
+            <span class="history-label">📚 Shift History:</span>
+            <select id="historySelect">
+              <option value="">-- No saved snapshots yet --</option>
+            </select>
+            <button class="btn-secondary btn-sm" onclick="loadFromHistory()">Load Snapshot</button>
+            <button class="btn-danger-soft" onclick="deleteHistoryItem()" title="Delete selected snapshot">🗑️</button>
+          </div>
+          <button class="btn-secondary btn-sm" onclick="saveToHistory()">💾 Save Current Snapshot</button>
         </div>
-        <div class="stat-pill-box highlight-box">
-          <div class="stat-pill-label">ACTIVE ROSTER</div>
-          <div class="stat-pill-value" id="dispHeadcount">11 / 11</div>
-          <div class="stat-pill-sub" id="dispTotalCallsBadge">249 total calls</div>
+
+        <div class="panel-actions">
+          <div class="btn-group">
+            <button class="btn-primary" onclick="generateReport(true)">⚡ Generate Report</button>
+            <button class="btn-amber" onclick="quickResetRoster()">🔄 Quick Reset (Keep Roster)</button>
+            <button class="btn-secondary" onclick="clearRawData()">🧹 Clear Text Box</button>
+            <button class="btn-secondary" onclick="loadSampleData()">↻ Sample Data</button>
+          </div>
+          <div class="btn-group">
+            <button class="btn-secondary" onclick="togglePresentationMode()">🖥️ Presentation Mode</button>
+            <button class="btn-dark" onclick="downloadReportPNG()">📸 Download PNG</button>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Floating KPI Metric Cards -->
-    <div class="kpi-grid">
-      <div class="kpi-card card-inbound">
-        <div class="kpi-info">
-          <div class="kpi-title">Total Inbound</div>
-          <div class="kpi-num" id="kpiTotalInbound">249</div>
-        </div>
-        <div class="kpi-icon-badge">📞</div>
-      </div>
-      <div class="kpi-card card-oncall">
-        <div class="kpi-info">
-          <div class="kpi-title">On Call / Ready</div>
-          <div class="kpi-num" id="kpiOnCall">11</div>
-        </div>
-        <div class="kpi-icon-badge">🎧</div>
-      </div>
-      <div class="kpi-card card-break">
-        <div class="kpi-info">
-          <div class="kpi-title">Break / Lunch</div>
-          <div class="kpi-num" id="kpiBreak">0</div>
-        </div>
-        <div class="kpi-icon-badge">☕</div>
-      </div>
-      <div class="kpi-card card-absent">
-        <div class="kpi-info">
-          <div class="kpi-title">Absent / Out</div>
-          <div class="kpi-num" id="kpiAbsent">0</div>
-        </div>
-        <div class="kpi-icon-badge">⏸️</div>
-      </div>
-    </div>
+    <!-- Visual Report Output -->
+    <div class="report-wrapper" id="reportCapture">
+      <div class="top-accent-bar"></div>
 
-    <!-- Agent Performance Table -->
-    <div class="table-card">
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>AGENT & RANK</th>
-              <th class="center">INBOUND VOLUME</th>
-              <th class="center">CALLS / HR</th>
-              <th class="center">LIVE STATUS</th>
-              <th class="center">MISSED</th>
-              <th class="center">AVG TALK TIME</th>
-              <th class="center">TOTAL PAUSE</th>
-            </tr>
-          </thead>
-          <tbody id="leaderboardBody"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- 2-Column Executive Briefing -->
-    <div class="briefing-grid">
-      <div class="briefing-card">
-        <div class="briefing-section">
-          <div class="briefing-title title-issue">⚠️ OPERATIONAL ALERTS THIS HOUR</div>
-          <ul id="issueList"></ul>
+      <div class="report-header">
+        <div class="header-left">
+          <div class="brand-logo" id="brandLogoBox">
+            <span class="brand-logo-mark">HN</span>
+            <span>HOPLA</span>
+          </div>
+          <div class="header-titles">
+            <div class="eyebrow-row">
+              <span class="team-tag" id="dispTeamTag">HOPLA_NUNEZ • OPERATIONS</span>
+              <span class="live-dot">HOURLY PULSE</span>
+            </div>
+            <h1>Team Performance & Queue Summary</h1>
+            <div class="header-meta">
+              <span id="dispTime">🕒 07:48 AM</span>
+              <span>•</span>
+              <span id="dispDate">📅 Wednesday, November 18, 2026</span>
+              <span>•</span>
+              <span id="dispSupervisor">Lead: John Reynald D. Nuñez</span>
+            </div>
+          </div>
         </div>
-        <div class="briefing-section">
-          <div class="briefing-title title-action">⚡ SUPERVISOR ACTION PLAN</div>
-          <ul id="actionList"></ul>
+
+        <div class="header-right-cluster">
+          <div class="stat-pill-box">
+            <div class="stat-pill-label">ANSWER RATE</div>
+            <div class="stat-pill-value emerald-val" id="dispAnswerRate">99.6%</div>
+            <div class="stat-pill-sub muted-sub" id="dispMissedSummary">1 missed total</div>
+          </div>
+          <div class="stat-pill-box highlight-box">
+            <div class="stat-pill-label">ACTIVE ROSTER</div>
+            <div class="stat-pill-value" id="dispHeadcount">11 / 11</div>
+            <div class="stat-pill-sub" id="dispTotalCallsBadge">249 total calls</div>
+          </div>
         </div>
       </div>
 
-      <div class="briefing-card">
-        <div class="briefing-title title-summary">📋 SHIFT PERFORMANCE SUMMARY</div>
-        <ul id="summaryList"></ul>
+      <div class="kpi-grid">
+        <div class="kpi-card card-inbound">
+          <div class="kpi-info">
+            <div class="kpi-title">Total Inbound</div>
+            <div class="kpi-num" id="kpiTotalInbound">249</div>
+          </div>
+          <div class="kpi-icon-badge">📞</div>
+        </div>
+        <div class="kpi-card card-oncall">
+          <div class="kpi-info">
+            <div class="kpi-title">On Call / Ready</div>
+            <div class="kpi-num" id="kpiOnCall">11</div>
+          </div>
+          <div class="kpi-icon-badge">🎧</div>
+        </div>
+        <div class="kpi-card card-break">
+          <div class="kpi-info">
+            <div class="kpi-title">Break / Lunch</div>
+            <div class="kpi-num" id="kpiBreak">0</div>
+          </div>
+          <div class="kpi-icon-badge">☕</div>
+        </div>
+        <div class="kpi-card card-absent">
+          <div class="kpi-info">
+            <div class="kpi-title">Absent / Out</div>
+            <div class="kpi-num" id="kpiAbsent">0</div>
+          </div>
+          <div class="kpi-icon-badge">⏸️</div>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>AGENT & RANK</th>
+                <th class="center">INBOUND VOLUME</th>
+                <th class="center">CALLS / HR</th>
+                <th class="center">LIVE STATUS</th>
+                <th class="center">MISSED</th>
+                <th class="center">AVG TALK TIME</th>
+                <th class="center">TOTAL PAUSE</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboardBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="briefing-grid">
+        <div class="briefing-card">
+          <div class="briefing-section">
+            <div class="briefing-title title-issue">⚠️ OPERATIONAL ALERTS THIS HOUR</div>
+            <ul id="issueList"></ul>
+          </div>
+          <div class="briefing-section">
+            <div class="briefing-title title-action">⚡ SUPERVISOR ACTION PLAN</div>
+            <ul id="actionList"></ul>
+          </div>
+        </div>
+
+        <div class="briefing-card">
+          <div class="briefing-title title-summary">📋 SHIFT PERFORMANCE SUMMARY</div>
+          <ul id="summaryList"></ul>
+        </div>
+      </div>
+
+      <div class="report-footer">
+        <span id="footerLeft">John Reynald D. Nuñez • Operations Pulse Report</span>
+        <span id="footerRight">Generated 11/18/2026, 7:48:00 AM</span>
       </div>
     </div>
-
-    <!-- Footer -->
-    <div class="report-footer">
-      <span id="footerLeft">Hopla_Nunez • Operations Pulse Report</span>
-      <span id="footerRight">Generated 11/18/2026, 7:33:00 AM</span>
-    </div>
-  </div>
+  </main>
 
 </body>
 </html>
