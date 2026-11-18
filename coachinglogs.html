@@ -60,13 +60,13 @@
       </div>
 
       <div class="form-grid">
-        <!-- Smart Paste Box (Just like Hourly Pulse) -->
+        <!-- Smart Paste Box -->
         <div class="field full-span">
           <label>
             <span>⚡ Smart Auto-Fill Paste (Tab, Space, or Multi-Line Agent Info)</span>
             <span class="hint-text">Auto-detects Name, Ext ID, Contractor ID, Issue &amp; Scorecard Strip</span>
           </label>
-          <textarea id="rawCoachingPaste" class="mono-paste" rows="3" spellcheck="false" placeholder="Paste a row from Excel/Google Sheets (e.g. 351	26-103-B	David John Montierde	Loraine Anne Obana	31	8.79%	76.19%	30.48%	4.84	38.75%	78.02%	PIP 1) or paste key-value lines..."></textarea>
+          <textarea id="rawCoachingPaste" class="mono-paste" rows="3" spellcheck="false" placeholder="Paste rows from Excel/Google Sheets (e.g. David John Montierde	351	26-103-B	Customer Support Specialist) or scorecard metrics..."></textarea>
           <div class="paste-toolbar">
             <button type="button" class="btn-emerald btn-xs" onclick="parseAndFillCoaching(true)">⚡ Auto-Fill Form</button>
             <button type="button" class="btn-secondary btn-xs" onclick="loadSampleCoachingPaste()">↻ Load Sample Paste</button>

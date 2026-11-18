@@ -33,7 +33,6 @@ body {
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   background-color: var(--surface-page);
   color: var(--ink-900);
-  padding: 22px;
   line-height: 1.45;
 }
 
@@ -89,7 +88,7 @@ body.presentation-mode .control-panel {
 .panel-body {
   padding: 20px 22px;
   display: grid;
-  grid-template-columns: 1.35fr 1fr;
+  grid-template-columns: 1.25fr 1fr;
   gap: 20px;
 }
 
@@ -125,13 +124,9 @@ body.presentation-mode .control-panel {
   margin-bottom: 4px;
 }
 
-.full-span {
-  grid-column: 1 / -1;
-}
-
 textarea {
   width: 100%;
-  height: 195px;
+  height: 220px;
   padding: 12px;
   border: 1px solid #cbd5e1;
   border-radius: 10px;
@@ -155,7 +150,7 @@ select:focus {
 .settings-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 10px 12px;
 }
 
 .settings-grid input,
@@ -235,6 +230,11 @@ button {
   align-items: center;
   gap: 6px;
   transition: all 0.15s ease;
+}
+
+.btn-xs {
+  padding: 5px 10px;
+  font-size: 11.5px;
 }
 
 .btn-sm {
@@ -785,7 +785,7 @@ tbody td {
   display: grid;
   grid-template-columns: 1.15fr 1fr;
   gap: 16px;
-  padding: 0 24px 22px 24px;
+  padding: 0 24px 18px 24px;
 }
 
 @media (max-width: 820px) {
@@ -832,6 +832,123 @@ tbody td {
 
 .briefing-card li {
   margin-bottom: 4px;
+}
+
+/* =========================================================
+   SPREADSHEET-STYLE PINK DAILY CALL TRACKER MATRIX
+   ========================================================= */
+.tracker-card {
+  margin: 0 24px 20px 24px;
+  background: #ffffff;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+}
+
+.tracker-header-bar {
+  background: #f8fafc;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tracker-title {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--ink-800);
+}
+
+.tracker-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tracker-hint {
+  font-size: 11px;
+  color: var(--ink-600);
+}
+
+.tracker-scroll {
+  width: 100%;
+  overflow-x: auto;
+  padding: 12px;
+  background: #ffffff;
+}
+
+.pink-tracker-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 12.5px;
+  border: 2px solid #475569;
+}
+
+.pink-tracker-table th,
+.pink-tracker-table td {
+  border: 1px solid #334155;
+  text-align: center;
+  vertical-align: middle;
+  padding: 6px 8px;
+  min-width: 78px;
+}
+
+.pink-tracker-table tr.tracker-head-row th.corner-peach {
+  background-color: #f6c2be;
+  min-width: 54px;
+}
+
+.pink-tracker-table tr.tracker-head-row th.agent-pink-head {
+  background-color: #f78ac2;
+  color: #000000;
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.pink-tracker-table tr.tracker-gap-row td {
+  background-color: #fce4ef;
+  height: 7px;
+  padding: 0;
+}
+
+.pink-tracker-table tr.tracker-gap-row td.week-peach-cell {
+  background-color: #f6c2be;
+  border-bottom: none;
+}
+
+.pink-tracker-table tr.tracker-val-row td.week-peach-cell {
+  background-color: #f6c2be;
+  color: #000000;
+  font-weight: 500;
+  border-top: none;
+  min-width: 52px;
+}
+
+.pink-tracker-table tr.tracker-val-row td.date-pink-cell {
+  background-color: #fce4ef;
+  color: #000000;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.pink-tracker-table tr.tracker-val-row td.val-pink-cell {
+  background-color: #fce4ef;
+  color: #000000;
+  font-weight: 500;
+  cursor: text;
+  line-height: 1.25;
+}
+
+.pink-tracker-table tr.tracker-val-row td.val-pink-cell:focus {
+  outline: 2px solid #db2777;
+  background-color: #fff1f2;
 }
 
 .report-footer {

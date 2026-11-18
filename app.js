@@ -10,21 +10,32 @@ const SAMPLE_DATA = `351-DJ Montierde\t28\t28\t0\t00:00:03\t00:00:12\t00:05:44\t
 602-Joevelyn Baylon\t22\t22\t0\t00:00:08\t00:00:16\t00:04:10\t01:31:48\t0%\t
 807-Mylene Diaz\t21\t21\t0\t00:00:03\t00:00:07\t00:05:34\t01:57:02\t0%`;
 
-// Added 'OUT' for agents who have completed their shift
 const STATUS_STATES = ['ON CALL', 'BREAK', 'LUNCH', 'OFF', 'OUT'];
-const STORAGE_KEY = 'hopla_nunez_report_settings_v3';
+const STORAGE_KEY = 'hopla_nunez_report_settings_v4';
 const HISTORY_KEY = 'hopla_nunez_shift_history_v1';
 let parsedAgents = [];
+let customTrackerNotes = {};
 let saveBadgeTimer = null;
 
 function flashSaveBadge(msg = '✓ Settings Auto-Saved') {
   const badge = document.getElementById('saveStatusBadge');
+  if (!badge) return;
   badge.textContent = msg;
   badge.style.background = 'rgba(16, 185, 129, 0.35)';
   clearTimeout(saveBadgeTimer);
   saveBadgeTimer = setTimeout(() => {
     badge.style.background = 'rgba(16, 185, 129, 0.18)';
   }, 900);
+}
+
+function getIsoWeekLabel() {
+  const now = new Date();
+  const temp = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+  const dayNum = temp.getUTCDay() || 7;
+  temp.setUTCDate(temp.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(temp.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil((((temp - yearStart) / 86400000) + 1) / 7);
+  return `W${weekNo}`;
 }
 
 function saveSettings() {
@@ -37,10 +48,12 @@ function saveSettings() {
     supervisor: document.getElementById('supervisorInput').value,
     scheduled: document.getElementById('scheduledInput').value,
     elapsedHours: document.getElementById('elapsedHoursInput').value,
+    weekLabel: document.getElementById('weekLabelInput').value,
     talkThreshold: document.getElementById('talkThresholdInput').value,
     pauseThreshold: document.getElementById('pauseThresholdInput').value,
     logoUrl: document.getElementById('logoUrlInput').value,
-    statusMap
+    statusMap,
+    customTrackerNotes
   };
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
@@ -57,12 +70,16 @@ function loadSettings() {
       if (saved.supervisor) document.getElementById('supervisorInput').value = saved.supervisor;
       if (saved.scheduled !== undefined) document.getElementById('scheduledInput').value = saved.scheduled;
       if (saved.elapsedHours) document.getElementById('elapsedHoursInput').value = saved.elapsedHours;
+      if (saved.weekLabel) document.getElementById('weekLabelInput').value = saved.weekLabel;
+      else document.getElementById('weekLabelInput').value = getIsoWeekLabel();
       if (saved.talkThreshold) document.getElementById('talkThresholdInput').value = saved.talkThreshold;
       if (saved.pauseThreshold) document.getElementById('pauseThresholdInput').value = saved.pauseThreshold;
       if (saved.logoUrl !== undefined) document.getElementById('logoUrlInput').value = saved.logoUrl;
+      if (saved.customTrackerNotes) customTrackerNotes = saved.customTrackerNotes;
       return saved.statusMap || {};
     }
   } catch (e) {}
+  document.getElementById('weekLabelInput').value = getIsoWeekLabel();
   return null;
 }
 
@@ -174,10 +191,10 @@ function quickResetRoster() {
     return `${rawAgentCol}\t0\t0\t0\t00:00:00\t00:00:00\t00:00:00\t00:00:00\t0%`;
   });
 
-  // Reset everyone who was OUT back to ON CALL for the new shift
   parsedAgents.forEach(a => {
     if (a.status === 'OUT') a.status = 'ON CALL';
   });
+  customTrackerNotes = {};
 
   document.getElementById('rawInput').value = resetLines.join('\n');
   document.getElementById('elapsedHoursInput').value = '1';
@@ -307,7 +324,7 @@ function renderReport() {
   updateTimestamps();
 
   const teamTag = document.getElementById('teamTagInput').value.trim() || 'HOPLA_NUNEZ • OPERATIONS';
-  const supervisor = document.getElementById('supervisorInput').value.trim() || 'Hopla_Nunez';
+  const supervisor = document.getElementById('supervisorInput').value.trim() || 'John Reynald D. Nuñez';
   const elapsedHours = Math.max(0.1, parseFloat(document.getElementById('elapsedHoursInput').value) || 1);
   const talkThreshSec = timeToSeconds(document.getElementById('talkThresholdInput').value || '00:05:30');
   const pauseThreshSec = timeToSeconds(document.getElementById('pauseThresholdInput').value || '01:00:00');
@@ -459,6 +476,87 @@ function renderReport() {
     `Continuous monitoring active for AHT and aux compliance.`
   ];
   summaryList.innerHTML = summaries.map(item => `<li>${item}</li>`).join('');
+
+  renderDailyTracker();
+}
+
+function renderDailyTracker() {
+  const table = document.getElementById('dailyTrackerTable');
+  if (!table) return;
+
+  const weekInput = document.getElementById('weekLabelInput');
+  const weekLabel = (weekInput && weekInput.value.trim()) ? weekInput.value.trim() : getIsoWeekLabel();
+
+  const now = new Date();
+  const dateLabel = `${now.getMonth() + 1}/${now.getDate()}/${now.getFullYear()}`;
+
+  const orderedAgents = [...parsedAgents].sort((a, b) => a.id - b.id);
+
+  if (orderedAgents.length === 0) {
+    table.innerHTML = '';
+    return;
+  }
+
+  let headHtml = `<tr class="tracker-head-row">
+    <th class="corner-peach"></th>
+    <th class="corner-peach"></th>`;
+  orderedAgents.forEach(agent => {
+    headHtml += `<th class="agent-pink-head">${agent.name}</th>`;
+  });
+  headHtml += `</tr>`;
+
+  let gapHtml = `<tr class="tracker-gap-row">
+    <td class="week-peach-cell"></td>`;
+  for (let i = 0; i <= orderedAgents.length; i++) {
+    gapHtml += `<td></td>`;
+  }
+  gapHtml += `</tr>`;
+
+  let valHtml = `<tr class="tracker-val-row">
+    <td class="week-peach-cell">${weekLabel}</td>
+    <td class="date-pink-cell">${dateLabel}</td>`;
+
+  orderedAgents.forEach(agent => {
+    let displayVal = agent.inbound;
+    if (customTrackerNotes[agent.name] !== undefined && customTrackerNotes[agent.name] !== '') {
+      displayVal = customTrackerNotes[agent.name];
+    } else if (agent.status === 'OFF' && agent.inbound === 0) {
+      displayVal = 'OFF';
+    }
+    const safeName = agent.name.replace(/"/g, '&quot;');
+    valHtml += `<td class="val-pink-cell" contenteditable="true" data-agent="${safeName}" onblur="updateTrackerCell(this)">${displayVal}</td>`;
+  });
+  valHtml += `</tr>`;
+
+  table.innerHTML = headHtml + gapHtml + valHtml;
+}
+
+function updateTrackerCell(cell) {
+  const agentName = cell.getAttribute('data-agent');
+  const val = cell.textContent.trim();
+  const agent = parsedAgents.find(a => a.name === agentName);
+
+  if (agent && val === String(agent.inbound)) {
+    delete customTrackerNotes[agentName];
+  } else {
+    customTrackerNotes[agentName] = val;
+  }
+  saveSettings();
+}
+
+function copyTrackerRow() {
+  const table = document.getElementById('dailyTrackerTable');
+  if (!table) return;
+  const valCells = table.querySelectorAll('tr.tracker-val-row td.val-pink-cell');
+  const rowText = Array.from(valCells).map(td => td.textContent.trim().replace(/\s+/g, ' ')).join('\t');
+
+  navigator.clipboard.writeText(rowText).then(() => {
+    const btn = document.getElementById('copySheetRowBtn');
+    if (btn) {
+      btn.textContent = '✓ Copied Call Volumes!';
+      setTimeout(() => { btn.textContent = '📋 Copy Row for Sheets'; }, 1600);
+    }
+  });
 }
 
 function loadSampleData() {
@@ -468,6 +566,7 @@ function loadSampleData() {
   document.getElementById('talkThresholdInput').value = '00:05:30';
   document.getElementById('pauseThresholdInput').value = '01:00:00';
   parsedAgents = [];
+  customTrackerNotes = {};
   generateReport(false);
 }
 
@@ -495,6 +594,7 @@ function downloadReportPNG() {
   'supervisorInput',
   'scheduledInput',
   'elapsedHoursInput',
+  'weekLabelInput',
   'talkThresholdInput',
   'pauseThresholdInput',
   'logoUrlInput'

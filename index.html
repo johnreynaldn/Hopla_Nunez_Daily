@@ -76,7 +76,7 @@
         </div>
 
         <div class="field-group">
-          <label>Report Settings & Thresholds (Auto-Saved)</label>
+          <label>Report Settings &amp; Thresholds (Auto-Saved)</label>
           <div class="settings-grid">
             <div>
               <label class="sub-label">Team Name / Header Tag</label>
@@ -95,6 +95,10 @@
               <input type="number" id="elapsedHoursInput" value="1" step="0.5" min="0.1" />
             </div>
             <div>
+              <label class="sub-label">Tracker Week Code (e.g. W46)</label>
+              <input type="text" id="weekLabelInput" value="W46" />
+            </div>
+            <div>
               <label class="sub-label">Talk Time Alert (&gt; MM:SS)</label>
               <input type="text" id="talkThresholdInput" value="00:05:30" />
             </div>
@@ -102,9 +106,9 @@
               <label class="sub-label">Pause Alert (&gt; HH:MM:SS)</label>
               <input type="text" id="pauseThresholdInput" value="01:00:00" />
             </div>
-            <div class="full-span">
+            <div>
               <label class="sub-label">Custom Logo URL (Optional)</label>
-              <input type="text" id="logoUrlInput" placeholder="Paste logo image URL or leave blank for default HN monogram" />
+              <input type="text" id="logoUrlInput" placeholder="Paste logo URL or leave blank" />
             </div>
           </div>
         </div>
@@ -140,6 +144,7 @@
     <div class="report-wrapper" id="reportCapture">
       <div class="top-accent-bar"></div>
 
+      <!-- Split-Card Header -->
       <div class="report-header">
         <div class="header-left">
           <div class="brand-logo" id="brandLogoBox">
@@ -151,9 +156,9 @@
               <span class="team-tag" id="dispTeamTag">HOPLA_NUNEZ • OPERATIONS</span>
               <span class="live-dot">HOURLY PULSE</span>
             </div>
-            <h1>Team Performance & Queue Summary</h1>
+            <h1>Team Performance &amp; Queue Summary</h1>
             <div class="header-meta">
-              <span id="dispTime">🕒 07:48 AM</span>
+              <span id="dispTime">🕒 09:20 AM</span>
               <span>•</span>
               <span id="dispDate">📅 Wednesday, November 18, 2026</span>
               <span>•</span>
@@ -176,6 +181,7 @@
         </div>
       </div>
 
+      <!-- Floating KPI Metric Cards -->
       <div class="kpi-grid">
         <div class="kpi-card card-inbound">
           <div class="kpi-info">
@@ -207,12 +213,13 @@
         </div>
       </div>
 
+      <!-- Agent Performance Table -->
       <div class="table-card">
         <div class="table-container">
           <table>
             <thead>
               <tr>
-                <th>AGENT & RANK</th>
+                <th>AGENT &amp; RANK</th>
                 <th class="center">INBOUND VOLUME</th>
                 <th class="center">CALLS / HR</th>
                 <th class="center">LIVE STATUS</th>
@@ -226,6 +233,7 @@
         </div>
       </div>
 
+      <!-- 2-Column Executive Briefing -->
       <div class="briefing-grid">
         <div class="briefing-card">
           <div class="briefing-section">
@@ -244,9 +252,24 @@
         </div>
       </div>
 
+      <!-- Spreadsheet-Style Daily Total Calls Tracker -->
+      <div class="tracker-card">
+        <div class="tracker-header-bar">
+          <div class="tracker-title">📅 DAILY CALL TOTALS TRACKER (SHEET-READY ROW)</div>
+          <div class="tracker-actions" data-html2canvas-ignore="true">
+            <span class="tracker-hint">Click any cell below to type LOA / Leave notes</span>
+            <button type="button" class="btn-secondary btn-xs" id="copySheetRowBtn" onclick="copyTrackerRow()">📋 Copy Row for Sheets</button>
+          </div>
+        </div>
+        <div class="tracker-scroll">
+          <table class="pink-tracker-table" id="dailyTrackerTable"></table>
+        </div>
+      </div>
+
+      <!-- Footer -->
       <div class="report-footer">
         <span id="footerLeft">John Reynald D. Nuñez • Operations Pulse Report</span>
-        <span id="footerRight">Generated 11/18/2026, 7:48:00 AM</span>
+        <span id="footerRight">Generated 11/18/2026, 9:20:00 AM</span>
       </div>
     </div>
   </main>

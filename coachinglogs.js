@@ -152,9 +152,6 @@ function isHeaderRow(cols) {
   return matches.length >= 2;
 }
 
-/* =========================================================
-   SMART AUTO-FILL PARSER (HANDLES ALL PASTE FORMATS)
-   ========================================================= */
 function parseAndFillCoaching(showFeedback = false) {
   const raw = document.getElementById('rawCoachingPaste').value.trim();
   if (!raw) return;
@@ -162,13 +159,12 @@ function parseAndFillCoaching(showFeedback = false) {
   const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
   const consumedLineIndexes = new Set();
 
-  // PASS 1: Check for 2-row paired blocks (Values on row i, Headers on row i+1 OR Headers on row i, Values on row i+1)
+  // PASS 1: Paired 2-row blocks (Values above Headers OR Headers above Values)
   for (let i = 0; i < lines.length - 1; i++) {
     const rowA = splitCols(lines[i]);
     const rowB = splitCols(lines[i + 1]);
 
     if (isHeaderRow(rowB) && rowA.length >= 2) {
-      // Values on top (rowA), Headers below (rowB) — e.g. "David John Montierde | 351 | 26-103-B | Customer Support Specialist"
       rowB.forEach((header, idx) => {
         if (rowA[idx]) mapFieldByLabel(header, rowA[idx]);
       });
@@ -176,7 +172,6 @@ function parseAndFillCoaching(showFeedback = false) {
       consumedLineIndexes.add(i + 1);
       i++;
     } else if (isHeaderRow(rowA) && rowB.length >= 2) {
-      // Headers on top (rowA), Values below (rowB)
       rowA.forEach((header, idx) => {
         if (rowB[idx]) mapFieldByLabel(header, rowB[idx]);
       });
@@ -186,20 +181,18 @@ function parseAndFillCoaching(showFeedback = false) {
     }
   }
 
-  // PASS 2: Process remaining unconsumed lines
+  // PASS 2: Process remaining lines
   const remainingLines = lines.filter((_, idx) => !consumedLineIndexes.has(idx));
   const leftoverNotes = [];
 
   remainingLines.forEach(line => {
     const cols = splitCols(line).filter(Boolean);
 
-    // Check for inline horizontal Session Table rows: e.g. "Session Location | Gmeet | Link | https://..."
     if (cols.length === 4 && mapFieldByLabel(cols[0], cols[1])) {
       mapFieldByLabel(cols[2], cols[3]);
       return;
     }
 
-    // Check for single "Label: Value" or "Label [Tab] Value"
     if (cols.length === 2 && mapFieldByLabel(cols[0], cols[1])) {
       return;
     }
@@ -208,7 +201,6 @@ function parseAndFillCoaching(showFeedback = false) {
       return;
     }
 
-    // Check if it's a multi-column row (Agent Info row or Scorecard row)
     if (cols.length >= 3) {
       let foundExt = '';
       let foundContractor = '';
@@ -219,7 +211,6 @@ function parseAndFillCoaching(showFeedback = false) {
       const hasPercentages = cols.some(c => /\d+(\.\d+)?%/.test(c));
 
       cols.forEach(col => {
-        // "351-DJ Montierde" combined format
         const prefixMatch = col.match(/^(\d{2,5})\s*[-–—]\s*(.+)$/);
         if (prefixMatch && !foundExt && !foundName) {
           foundExt = prefixMatch[1];
@@ -228,30 +219,25 @@ function parseAndFillCoaching(showFeedback = false) {
           return;
         }
 
-        // Standalone 3-4 digit Extension ID (e.g. "351")
         if (!foundExt && /^\d{3,4}$/.test(col)) {
           foundExt = col;
           return;
         }
 
-        // Contractor ID pattern (e.g. "26-103-B")
         if (!foundContractor && /^[A-Z0-9]{1,4}-\d{2,5}(-[A-Z0-9]+)?$/i.test(col)) {
           foundContractor = col;
           return;
         }
 
-        // Position / Title keywords
         if (!foundPosition && /(specialist|representative|agent|support|associate|lead|analyst)/i.test(col)) {
           foundPosition = col;
           return;
         }
 
-        // Presenting Issue keywords (e.g. "PIP 1", "PIP 2", "Attendance")
         if (/^(PIP\s*\d*|Attendance|AHT|CSAT|QA|Behavior|Compliance|Coaching)/i.test(col)) {
           foundIssue = col;
         }
 
-        // First person-like name
         if (!foundName && /^[A-Za-zÀ-ÿ .'-]{4,}$/.test(col) && !foundIssue) {
           foundName = col;
         }
@@ -270,14 +256,12 @@ function parseAndFillCoaching(showFeedback = false) {
       if (foundPosition) document.getElementById('inPosition').value = foundPosition;
       if (foundIssue) document.getElementById('inIssue').value = foundIssue;
 
-      // Only update the Scorecard Strip if the pasted row actually contains scorecard metrics/percentages
       if (hasPercentages || scorecardCols.length >= 5) {
         document.getElementById('inScorecardRow').value = scorecardCols.join('\t');
       }
       return;
     }
 
-    // Anything else goes into Optional Discussion Notes
     leftoverNotes.push(line);
   });
 
