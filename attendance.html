@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hopla_Nunez — Attendance &amp; Weekly Schedule</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="sidebar.css" />
+  <link rel="stylesheet" href="attendance.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+  <script src="attendance.js" defer></script>
+</head>
+<body>
+
+  <!-- Left Navigation Sidebar -->
+  <aside class="app-sidebar" id="appSidebar">
+    <div class="sidebar-top">
+      <div class="sidebar-brand">
+        <div class="brand-badge-icon">HN</div>
+        <span class="brand-title">Hopla_Nunez</span>
+      </div>
+      <button class="sidebar-toggle-btn" onclick="document.getElementById('appSidebar').classList.toggle('collapsed')" title="Toggle Sidebar">☰</button>
+    </div>
+
+    <nav class="sidebar-menu">
+      <a href="index.html" class="sidebar-item">
+        <div class="sidebar-item-left">
+          <span class="nav-circle circle-emerald">📊</span>
+          <span class="nav-text">Hourly Pulse</span>
+        </div>
+        <span class="nav-plus">+</span>
+      </a>
+
+      <a href="attendance.html" class="sidebar-item active">
+        <div class="sidebar-item-left">
+          <span class="nav-circle circle-rose">📅</span>
+          <span class="nav-text">Attendance</span>
+        </div>
+      </a>
+
+      <a href="coachinglogs.html" class="sidebar-item">
+        <div class="sidebar-item-left">
+          <span class="nav-circle circle-amber">📝</span>
+          <span class="nav-text">Coaching Logs</span>
+        </div>
+        <span class="nav-plus">+</span>
+      </a>
+
+      <a href="#" class="sidebar-item" onclick="downloadSchedulePNG(); return false;">
+        <div class="sidebar-item-left">
+          <span class="nav-circle circle-cyan">📸</span>
+          <span class="nav-text">Export PNG</span>
+        </div>
+        <span class="nav-plus">+</span>
+      </a>
+    </nav>
+  </aside>
+
+  <!-- Main Workspace -->
+  <main class="main-workspace">
+
+    <!-- Management Control Panel -->
+    <div class="control-card">
+      <div class="control-header">
+        <h2>
+          <span>📅 Team Attendance &amp; Weekly Schedule Manager</span>
+          <span class="save-badge" id="attSaveBadge">✓ Roster Auto-Saved</span>
+        </h2>
+        <span class="control-hint">Click any shift cell to toggle (11:00 AM / 9:00 AM / OFF / LOA / Swap) or double-click to type custom text</span>
+      </div>
+
+      <div class="control-body">
+        <!-- Add Agent Form -->
+        <div class="add-agent-bar">
+          <div class="bar-title">➕ Add New Agent to Schedule</div>
+          <div class="add-grid">
+            <input type="text" id="newCid" placeholder="CID (e.g. 26-305-B)" />
+            <input type="text" id="newExt" placeholder="EXT (e.g. 610)" />
+            <input type="text" id="newName" placeholder="Agent Full Name" />
+            <select id="newLob">
+              <option value="Inbound">Inbound</option>
+              <option value="Inbound - HO Buffer">Inbound - HO Buffer</option>
+            </select>
+            <select id="newPattern">
+              <option value="tue_sat_11">Tue–Sat 11:00 AM (Mon/Sun OFF)</option>
+              <option value="tue_sat_9_11">Tue–Wed 9:00 AM, Thu–Sat 11:00 AM</option>
+              <option value="mon_wed_sat_sun_11">Mon–Wed &amp; Sat–Sun 11:00 AM (Thu/Fri OFF)</option>
+              <option value="mon_fri_11">Mon–Fri 11:00 AM (Sat/Sun OFF)</option>
+            </select>
+            <button type="button" class="btn-emerald" onclick="addAgentRow()">➕ Add Agent</button>
+          </div>
+        </div>
+
+        <!-- Toolbar & Day Selector -->
+        <div class="toolbar-row">
+          <div class="day-filter-group">
+            <label for="activeDaySelect">🔍 Highlight / View Shift Day:</label>
+            <select id="activeDaySelect" onchange="renderAttendance()">
+              <option value="AUTO">Auto-Detect Today</option>
+              <option value="Monday">Monday</option>
+              <option value="Tuesday">Tuesday</option>
+              <option value="Wednesday">Wednesday</option>
+              <option value="Thursday">Thursday</option>
+              <option value="Friday">Friday</option>
+              <option value="Saturday">Saturday</option>
+              <option value="Sunday">Sunday</option>
+            </select>
+            <input type="text" id="searchAgentInput" placeholder="Filter agent name or EXT..." oninput="renderAttendance()" />
+          </div>
+
+          <div class="btn-group">
+            <button type="button" class="btn-secondary" onclick="toggleBulkPaste()">📋 Paste from Sheet</button>
+            <button type="button" class="btn-secondary" onclick="copyRosterForPulse()">⚡ Copy Active Shift EXT List</button>
+            <button type="button" class="btn-secondary" onclick="resetDefaultRoster()">↺ Reset Default Roster</button>
+            <button type="button" class="btn-dark" onclick="downloadSchedulePNG()">📸 Download PNG</button>
+          </div>
+        </div>
+
+        <!-- Collapsible Bulk Paste Drawer -->
+        <div class="bulk-paste-drawer" id="bulkPasteDrawer" style="display: none;">
+          <label>Paste rows directly from Excel/Google Sheets (Columns: CID, EXT, Agent, LOB, Monday ... Sunday)</label>
+          <textarea id="bulkSchedulePaste" rows="4" placeholder="26-091-B	602	Joevelyn Baylon	Inbound	OFF	11:00 AM	11:00 AM	11:00 AM	11:00 AM	11:00 AM	OFF"></textarea>
+          <div class="btn-group" style="margin-top: 8px;">
+            <button type="button" class="btn-emerald btn-sm" onclick="importBulkSchedule()">Import &amp; Replace Schedule</button>
+            <button type="button" class="btn-secondary btn-sm" onclick="toggleBulkPaste()">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Capture Area for PNG Export -->
+    <div class="attendance-wrapper" id="attendanceCapture">
+      <div class="top-accent-bar"></div>
+
+      <!-- Header & Today's Shift Summary -->
+      <div class="att-header">
+        <div>
+          <div class="eyebrow-tag">HOPLA_NUNEZ • WORKFORCE &amp; ATTENDANCE</div>
+          <h1>Weekly Shift Schedule &amp; Daily Attendance</h1>
+          <div class="att-meta" id="attDateSubtitle">Showing shift coverage for Thursday, November 19, 2026</div>
+        </div>
+
+        <div class="today-badges">
+          <div class="stat-box box-green">
+            <div class="stat-lbl">ON SHIFT TODAY</div>
+            <div class="stat-val" id="statOnShift">12</div>
+            <div class="stat-sub" id="statShiftBreakdown">12 @ 11:00 AM • 0 @ 9:00 AM</div>
+          </div>
+          <div class="stat-box box-slate">
+            <div class="stat-lbl">SCHEDULED OFF</div>
+            <div class="stat-val" id="statOff">1</div>
+            <div class="stat-sub" id="statTotalRoster">13 total agents</div>
+          </div>
+          <div class="stat-box box-amber">
+            <div class="stat-lbl">LOA / SWAPS</div>
+            <div class="stat-val" id="statExceptions">0</div>
+            <div class="stat-sub" id="statExceptionNames">No exceptions today</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Today's Roster Strip -->
+      <div class="today-roster-strip">
+        <div class="strip-title" id="todayStripTitle">✅ SCHEDULED AGENTS TODAY (THURSDAY):</div>
+        <div class="agent-chips" id="todayAgentChips"></div>
+      </div>
+
+      <!-- Spreadsheet Schedule Matrix -->
+      <div class="matrix-card">
+        <div class="matrix-scroll">
+          <table class="schedule-table" id="scheduleMatrixTable">
+            <thead>
+              <tr id="scheduleHeaderRow">
+                <th>CID</th>
+                <th>EXT</th>
+                <th>Agent</th>
+                <th>LOB</th>
+                <th data-day="Monday">Monday</th>
+                <th data-day="Tuesday">Tuesday</th>
+                <th data-day="Wednesday">Wednesday</th>
+                <th data-day="Thursday">Thursday</th>
+                <th data-day="Friday">Friday</th>
+                <th data-day="Saturday">Saturday</th>
+                <th data-day="Sunday">Sunday</th>
+                <th class="action-col" data-html2canvas-ignore="true">Action</th>
+              </tr>
+            </thead>
+            <tbody id="scheduleTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Legend & Footer -->
+      <div class="att-footer">
+        <div class="legend-items">
+          <span class="leg-item"><i class="swatch sw-pink"></i> 11:00 AM Shift</span>
+          <span class="leg-item"><i class="swatch sw-blue"></i> 9:00 AM Shift</span>
+          <span class="leg-item"><i class="swatch sw-hotpink"></i> Inbound - HO Buffer</span>
+          <span class="leg-item"><i class="swatch sw-amber"></i> LOA / Leave</span>
+          <span class="leg-item"><i class="swatch sw-indigo"></i> Swap Schedule</span>
+          <span class="leg-item"><i class="swatch sw-white"></i> OFF</span>
+        </div>
+        <div id="attFooterStamp">John Reynald D. Nuñez • Workforce Schedule</div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Quick Shift / Status Picker Popover -->
+  <div class="cell-popover" id="cellPopover" style="display: none;">
+    <div class="pop-header" id="popAgentTitle">Edit Shift</div>
+    <div class="pop-buttons">
+      <button type="button" class="pop-btn pop-11" onclick="applyQuickShift('11:00 AM')">11:00 AM</button>
+      <button type="button" class="pop-btn pop-9" onclick="applyQuickShift('9:00 AM')">9:00 AM</button>
+      <button type="button" class="pop-btn pop-off" onclick="applyQuickShift('OFF')">OFF</button>
+      <button type="button" class="pop-btn pop-loa" onclick="applyQuickShift('LOA')">LOA</button>
+      <button type="button" class="pop-btn pop-swap" onclick="applyQuickShift('Swap Schedule')">Swap Schedule</button>
+    </div>
+    <div class="pop-custom-row">
+      <input type="text" id="popCustomInput" placeholder="Custom (e.g. Swap w/ Myla, 10:00 AM)..." onkeydown="if(event.key==='Enter') applyCustomShift()" />
+      <button type="button" class="btn-dark btn-xs" onclick="applyCustomShift()">Set</button>
+    </div>
+  </div>
+
+</body>
+</html>
